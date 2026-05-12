@@ -72,8 +72,6 @@ A pure mini reimplementation of [Coolify's v3 Branch](https://github.com/coollab
 
 ## Quick Install
 
-### Public install (no PAT)
-
 ```bash
 curl -fsSL https://raw.githubusercontent.com/annihilatorrrr/gocoolify/main/install.sh | sudo bash
 ```
