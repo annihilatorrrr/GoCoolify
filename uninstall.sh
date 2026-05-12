@@ -40,7 +40,7 @@ die()     { echo -e "${RED}[error]${NC} $*" >&2; exit 1; }
 COOLIFY_DIR="${COOLIFY_DIR:-/data/coolifygo}"
 # Repo source. Edit the default below or pass COOLIFY_REPO=you/yourfork at runtime.
 REPO="${COOLIFY_REPO:-annihilatorrrr/coolifygo}"
-REPO_RAW="https://raw.githubusercontent.com/${REPO}/main"
+REPO_RAW="https://raw.githubusercontent.com/annihilatorrrr/gocoolify/main"
 IMAGE_BAK="ghcr.io/${REPO}:bak"
 MODE="soft"
 PURGE_DOCKER=0
