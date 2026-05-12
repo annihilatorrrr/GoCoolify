@@ -9,7 +9,7 @@
 
 set -euo pipefail
 
-SCRIPT_VERSION="v2.0.0-public"
+SCRIPT_VERSION="v2.0.0"
 ARCH=$(uname -m)
 WHO=$(whoami)
 DEBUG=0
@@ -23,7 +23,7 @@ COOLIFY_DIR="${COOLIFY_DIR:-/data/coolifygo}"
 #   - inline:   change the default below
 #   - per-run:  COOLIFY_REPO=you/yourfork bash install.sh
 REPO="${COOLIFY_REPO:-annihilatorrrr/coolifygo}"
-REPO_RAW="https://raw.githubusercontent.com/${REPO}/main"
+REPO_RAW="https://raw.githubusercontent.com/annihilatorrrr/gocoolify/main"
 IMAGE="ghcr.io/${REPO}:latest"
 
 # ─── Colors ───────────────────────────────────────────────────────────────────
@@ -79,7 +79,7 @@ Usage: install.sh [options]
   -r, --restart    Restart CoolifyGo service only
 
 To uninstall:
-  curl -fsSL ${REPO_RAW}/pscripts/uninstall.sh | sudo bash
+  curl -fsSL ${REPO_RAW}/uninstall.sh | sudo bash
 
 Env overrides (set before running):
   COOLIFY_PORT     Dashboard port     (default: 3000)
@@ -143,7 +143,7 @@ if [ $REINSTALL -eq 1 ]; then
         read -p "Proceed with reinstall? [Y/n] " yn
         yn="${yn:-Y}"
         case $yn in
-        [Nn]*) info "Aborted. To update: curl -fsSL ${REPO_RAW}/pscripts/update.sh | sudo bash"; exit 0 ;;
+        [Nn]*) info "Aborted. To update: curl -fsSL ${REPO_RAW}/update.sh | sudo bash"; exit 0 ;;
         esac
     fi
     echo ""
@@ -315,8 +315,8 @@ echo -e "  ${BOLD}Data dir:${NC}   ${COOLIFY_DIR}  (config auto-generated here o
 echo -e "  ${BOLD}Logs:${NC}       docker logs coolifygo -f"
 echo -e "  ${BOLD}Stop:${NC}       systemctl stop coolifygo"
 echo -e "  ${BOLD}Restart:${NC}    systemctl restart coolifygo"
-echo -e "  ${BOLD}Update:${NC}     curl -fsSL ${REPO_RAW}/pscripts/update.sh | sudo bash"
-echo -e "  ${BOLD}Uninstall:${NC}  curl -fsSL ${REPO_RAW}/pscripts/uninstall.sh | sudo bash"
+echo -e "  ${BOLD}Update:${NC}     curl -fsSL ${REPO_RAW}/update.sh | sudo bash"
+echo -e "  ${BOLD}Uninstall:${NC}  curl -fsSL ${REPO_RAW}/uninstall.sh | sudo bash"
 echo ""
 echo -e "  ${YELLOW}Open the dashboard and register your first admin user.${NC}"
 echo ""
