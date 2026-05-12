@@ -469,47 +469,9 @@ GET    /health                            ← {"status":"ok","service":"coolifyg
 
 ## Development
 
-```bash
-cp .env.example .env
-docker compose -f docker/docker-compose.yml up -d
-go run ./cmd/server
-
-# hot reload (requires: go install github.com/air-verse/air@latest)
-air
-```
-
-```bash
-make tools          # install air, golangci-lint
-make build          # go build -o bin/coolifygo ./cmd/server
-make run            # build + run
-make dev            # hot reload via air
-make test           # go test ./... -v
-make test-race      # go test -race ./...
-make lint           # golangci-lint run ./...
-make vet            # go vet ./...
-make docker-build   # build production Docker image
-make docker-up      # spin up Postgres + Redis
-make docker-down    # tear down
-make clean          # rm -rf bin/
-make tidy           # go mod tidy
-```
-
-Single test:
-```bash
-go test ./internal/api/... -run TestName
-```
-
----
-
 ## Logs
 
 ```bash
 docker logs coolifygo -f          # follow live logs
 docker logs coolifygo --tail 100  # last 100 lines
 ```
-
----
-
-## License
-
-MIT
