@@ -209,11 +209,10 @@ configureDocker() {
     cat > "$DAEMON_JSON" <<'DAEMON'
 {
   "log-driver": "json-file",
-  "log-opts": { "max-size": "100m", "max-file": "5" },
+  "log-opts": { "max-size": "5m", "max-file": "5" },
   "live-restore": true,
   "default-address-pools": [
-    { "base": "172.17.0.0/12",  "size": 20 },
-    { "base": "192.168.0.0/16", "size": 24 }
+    { "base": "10.20.0.0/16", "size": 24 }
   ]
 }
 DAEMON
