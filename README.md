@@ -152,6 +152,15 @@ A single Go binary plus Docker is all you need to host **applications, databases
 
 </details>
 
+# Min requirements for coolifygo:
+- CPU: 1 vCPU (2 recommended — builds can saturate)
+- RAM: 1 GB (2 GB recommended). Idle: ~50-100 MB coolifygo + ~30-50 MB Postgres + ~10 MB Redis + Docker daemon ~50-100 MB ≈ 200-250 MB before any user apps.
+- Disk: 20 GB (Docker images + build cache add up fast; cleanup runs every 15 min)
+- Docker: required (host)
+- OS: any 64-bit Linux that runs current Docker; binary is multi-arch (amd64 + arm64).
+
+> Oracle Cloud's Always Free A1 (4 OCPU, 24 GB RAM, ARM) is well above this — perfect fit.
+
 ---
 
 ## ⚡ Quick Install
