@@ -41,6 +41,39 @@ errorchecker() {
     [ $exitCode -ne 0 ] && echo "$0 exited unexpectedly with status: $exitCode"
 }
 
+# Detect the host's externally-reachable IPv4 — mirrors internal/netutil.OutboundIP
+# so the final "Dashboard:" URL matches what the binary itself prints. `hostname -I`
+# alone returns the first private VNIC IP on cloud VMs that NAT the public address
+# (Oracle Cloud / AWS / GCP), giving the user a URL that doesn't work from outside
+# the VPC. Order: PUBLIC_IP env → local outbound IP → echo service when local is
+# RFC1918/CGNAT/link-local → fallback.
+detect_public_ip() {
+    if [ -n "${PUBLIC_IP:-}" ]; then printf '%s' "$PUBLIC_IP"; return; fi
+    local local_ip=""
+    if command -v ip >/dev/null 2>&1; then
+        local_ip=$(ip -4 route get 1.1.1.1 2>/dev/null | awk 'NR==1 {for(i=1;i<=NF;i++) if ($i=="src") {print $(i+1); exit}}')
+    fi
+    if [ -z "$local_ip" ] && command -v hostname >/dev/null 2>&1; then
+        local_ip=$(hostname -I 2>/dev/null | awk '{print $1}')
+    fi
+    local is_private=0
+    case "$local_ip" in
+        10.*|192.168.*|169.254.*) is_private=1 ;;
+        172.1[6-9].*|172.2[0-9].*|172.3[01].*) is_private=1 ;;
+        100.6[4-9].*|100.[7-9][0-9].*|100.1[01][0-9].*|100.12[0-7].*) is_private=1 ;;
+    esac
+    if [ "$is_private" = "1" ]; then
+        local url pub
+        for url in https://api.ipify.org https://ifconfig.me/ip https://icanhazip.com; do
+            pub=$(curl -sf --max-time 2 "$url" 2>/dev/null | tr -d '[:space:]')
+            if printf '%s' "$pub" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
+                printf '%s' "$pub"; return
+            fi
+        done
+    fi
+    printf '%s' "${local_ip:-localhost}"
+}
+
 restartCoolifyGo() {
     [ ! -f /etc/systemd/system/coolifygo.service ] && die "CoolifyGo service not found. Run the installer first."
     info "Restarting CoolifyGo..."
@@ -290,7 +323,7 @@ for i in $(seq 1 45); do
 done
 
 # ─── Done ─────────────────────────────────────────────────────────────────────
-SERVER_IP=$(hostname -I | awk '{print $1}')
+SERVER_IP=$(detect_public_ip)
 echo ""
 if [ $READY -eq 1 ]; then
     if [ $REINSTALL -eq 1 ]; then
