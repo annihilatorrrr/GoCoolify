@@ -606,13 +606,13 @@ GET    /health                                      ← {"status":"ok","service"
 |---|---|
 | Language | 🐹 Go 1.26 |
 | Router | chi v5 |
-| Database | 🐘 PostgreSQL 18 + pgx/v5 |
+| Database | 🐘 PostgreSQL v17 + pgx/v5 |
 | Schema | Single embedded `internal/db/schema.sql`, applied idempotently on every boot — no migrations layer |
 | Docker | 🐳 Docker SDK v28 — pure Go, no shell-out (except Compose plugin) |
 | SSH | golang.org/x/crypto/ssh |
 | Git | go-git/go-git/v5 — recursive submodules, native HTTPS + SSH transports |
 | WebSockets | gorilla/websocket |
-| Async jobs | asynq (Redis-backed) |
+| Async jobs | asynq (Redis v7 - backed) |
 | Logging | zerolog |
 | Timezone DB | embedded via `time/tzdata` — works on scratch / distroless / minimal alpine without a host `tzdata` package |
 | Frontend | ✨ Alpine.js v3.15 + Tailwind CSS 3 — **vendored** into `web/dist/static/`, embedded via `go:embed`. **No npm, no Node, no build step, no CDN at runtime.** |
