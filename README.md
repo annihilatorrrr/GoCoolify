@@ -63,7 +63,7 @@ A single Go binary plus Docker is all you need to host **applications, databases
 <details open>
 <summary><b>🏗️  Applications</b> — Dockerfile, Docker Compose, inline, or pull-from-image</summary>
 
-- **Deploy Anything** — Deploy anything using Docerfile (Currently only Dockerfile is supported!).
+- **Deploy Anything** — Deploy anything using Docerfile (Currently only Dockerfile/ Compose YAML is supported!).
 - **Git deploys** — clone any public or private repo, build with **Dockerfile** or **Docker Compose**, run with one click. App reachable at `http://<server-ip>:<port>`.
 - **Git submodules** — recursive `--init` happens automatically on every clone, in pure Go (matches Coolify v3 behaviour without shelling to `git`).
 - **Inline Dockerfile** — paste a Dockerfile in the UI instead of pointing at a repo.
@@ -84,7 +84,7 @@ A single Go binary plus Docker is all you need to host **applications, databases
 </details>
 
 <details>
-<summary><b>🗄️  Managed Databases</b> — PostgreSQL · MySQL · MongoDB · Redis</summary>
+<summary><b>🗄️  Managed Databases</b> — PostgreSQL · MySQL · MongoDB · Redis and more ...</summary>
 
 - **Versions:** PostgreSQL 12 → 18, MySQL 8.0/5.7, MongoDB 4.4/5.0/6.0/7.0, Redis 6.0/6.2/7.0/7.2.
 - **One-click create wizard** — pick type, version, port. Root + app credentials auto-generated and shown.
