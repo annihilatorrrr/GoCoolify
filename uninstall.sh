@@ -214,7 +214,7 @@ if command -v docker &>/dev/null; then
         SNAPSHOTTED_VOLS=$(echo "$MANAGED_IDS" \
             | xargs docker inspect -f '{{range .Mounts}}{{if eq .Type "volume"}}{{.Name}}{{"\n"}}{{end}}{{end}}' 2>/dev/null \
             | grep -v '^$' | sort -u || true)
-        echo "$MANAGED_IDS" | xargs docker stop --time 10 2>/dev/null || true
+        echo "$MANAGED_IDS" | xargs docker stop --timeout 10 2>/dev/null || true
         echo "$MANAGED_IDS" | xargs docker rm   -f        2>/dev/null || true
         REMOVED=$(echo "$MANAGED_IDS" | wc -l | tr -d ' ')
         success "$REMOVED managed container(s) removed"
