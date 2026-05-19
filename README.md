@@ -4,7 +4,7 @@ A pure mini reimplementation of [Coolify's v3 Branch](https://github.com/coollab
 
 > 🪶 **Single binary. No Node. No PHP. No Laravel. Just Go.**
 
-> Open-source Heroku alternative. Free. Self-hosted. Runs on Raspberry Pi, Oracle Cloud Free Tier (ARM64), or any VPS. Deploys Dockerfile + Docker Compose apps. Scheduled database backups to Telegram or local disk. Built-in restore from upload or saved backup.
+> Open-source Heroku alternative. Free. Self-hosted. Runs on Raspberry Pi, Oracle Cloud Free Tier (ARM64), or any VPS. Deploys Dockerfile + Docker Compose apps only. Scheduled database backups to Telegram or local disk. Built-in restore from upload or saved backup.
 
 ## Code Stats:
 [![DeepSource](https://app.deepsource.com/gh/annihilatorrrr/coolifygo.svg/?label=active+issues&show_trend=true&token=ymMYtFVTG4J5NzFqTkiqzwUZ)](https://app.deepsource.com/gh/annihilatorrrr/coolifygo/)
@@ -63,6 +63,7 @@ A single Go binary plus Docker is all you need to host **applications, databases
 <details open>
 <summary><b>🏗️  Applications</b> — Dockerfile, Docker Compose, inline, or pull-from-image</summary>
 
+- **Deploy Anything** — Deploy anything using Docerfile (Currently only Dockerfile is supported!).
 - **Git deploys** — clone any public or private repo, build with **Dockerfile** or **Docker Compose**, run with one click. App reachable at `http://<server-ip>:<port>`.
 - **Git submodules** — recursive `--init` happens automatically on every clone, in pure Go (matches Coolify v3 behaviour without shelling to `git`).
 - **Inline Dockerfile** — paste a Dockerfile in the UI instead of pointing at a repo.
