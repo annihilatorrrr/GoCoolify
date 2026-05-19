@@ -642,11 +642,12 @@ MIT — see [LICENSE](LICENSE).
 
 <!--
 Keywords (for search): self-hosted PaaS, Coolify alternative, Heroku alternative, Render alternative,
-Vercel alternative, open-source PaaS, Docker deployment, Go PaaS, Raspberry Pi PaaS, Oracle Cloud
+Vercel alternative, free PaaS, Docker deployment, Go PaaS, Raspberry Pi PaaS, Oracle Cloud
 Free Tier, ARM64 deployment, self-host applications, self-host databases, Telegram backups,
 scheduled database backups, PostgreSQL backup, MySQL backup, MongoDB backup, Redis backup,
 Docker Compose deployment, GitHub auto-deploy, self-hosted Heroku, free hosting, Docker SDK Go,
-Coolify v3 Go rewrite, Nextcloud one-click, Vaultwarden one-click, Gitea one-click, Uptime Kuma
-one-click, Grafana self-host, Prometheus self-host, self-host PaaS Go single binary, restore
-PostgreSQL from dump, restore MySQL backup, restore MongoDB archive, Redis RDB restore.
+Coolify v3 Go rewrite, CoolifyGo, Coolify go, Nextcloud one-click, Vaultwarden one-click,
+Gitea one-click, Uptime Kuma, one-click, Grafana self-host, Prometheus self-host,
+self-host PaaS Go single binary, restore PostgreSQL from dump, restore MySQL backup,
+restore MongoDB archive, Redis RDB restore.
 -->
