@@ -216,9 +216,18 @@ if ! command -v docker &>/dev/null; then
 fi
 
 # ─── Docker: disable Swarm if active (CoolifyGo uses bridge networks) ────────
+# CoolifyGo binds host ports directly via the Docker SDK. With Swarm active,
+# the ingress mesh hijacks published ports and silently breaks every app/db
+# port mapping. Continuing past a failed `swarm leave` would leave the host
+# in a broken state that's hard to diagnose later — abort and let the user
+# stop whatever's keeping Swarm in standby (workers, services, locked mgr).
 if [ "$(docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null)" = "active" ]; then
     warn "Docker Swarm is active — disabling it so bridge networking works correctly…"
-    docker swarm leave --force >/dev/null 2>&1 && success "Docker Swarm disabled." || warn "Could not leave Swarm — continuing anyway."
+    if docker swarm leave --force >/dev/null 2>&1; then
+        success "Docker Swarm disabled."
+    else
+        die "Could not leave Docker Swarm. CoolifyGo cannot share host ports with the Swarm ingress mesh — run 'docker swarm leave --force' manually and re-run this installer."
+    fi
 fi
 
 # ─── Docker: version check ────────────────────────────────────────────────────
