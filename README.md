@@ -166,6 +166,8 @@ A single Go binary plus Docker is all you need to host **applications, databases
 
 ## ⚡ Quick Install
 
+### [Migrater (V3 to Go)](https://github.com/annihilatorrrr/coolifyv32Go)
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/annihilatorrrr/gocoolify/main/install.sh | sudo bash
 ```
