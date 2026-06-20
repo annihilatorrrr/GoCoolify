@@ -230,6 +230,132 @@ if [ "$(docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null)" = "active
     fi
 fi
 
+# ─── Oracle Cloud: open iptables INPUT for dashboard + all user-space ports ───
+# Oracle Cloud's stock Ubuntu/OL images ship a pre-loaded iptables that REJECTs
+# all inbound except SSH. The VCN Security List in the OCI console is a separate
+# layer — fixing the cloud side alone still leaves a perfectly-running CoolifyGo
+# unreachable from a browser.
+#
+# We open the full non-privileged TCP range (1024-65535), not just the default
+# 9000-9100 allocator range, because:
+#   • Apps let users type ANY port in the UI (Application.Port is free-form).
+#   • Service templates hard-code wildly varied ports (GlitchTip web 8000,
+#     Gitea 3010, Ghost 2368, wg-easy 51821, AdGuard 3020/80…). composeports.Rewrite
+#     remaps these to 9000-9100 ONLY when the user doesn't pin them — env-var
+#     refs (${PORT}:80), ranges, and many real-world pasted composes survive verbatim.
+#   • Custom user-pasted compose YAML is opaque to us at install time.
+#   • On OCI, the VCN Security List is the real access gate.
+# Privileged ports (<1024) are excluded — docker requires CAP_NET_BIND_SERVICE
+# to bind there and users rarely configure that. 22 stays ACCEPTed by Oracle's
+# pre-existing rule above the REJECT, untouched.
+#
+# UDP is NOT auto-opened — opening UDP 1024-65535 wholesale is dangerous
+# (memcached/NTP/DNS/chargen amplification reflectors without auth). Users
+# running UDP services (wg-easy on 51820, game servers, custom compose) open
+# the specific UDP ports manually.
+APP_PORT_RANGE="1024:65535"
+
+is_oracle_cloud() {
+    if [ -r /sys/class/dmi/id/chassis_asset_tag ] && \
+       grep -qi 'OracleCloud' /sys/class/dmi/id/chassis_asset_tag 2>/dev/null; then
+        return 0
+    fi
+    if [ -r /sys/class/dmi/id/sys_vendor ] && \
+       grep -qi '^Oracle' /sys/class/dmi/id/sys_vendor 2>/dev/null; then
+        return 0
+    fi
+    return 1
+}
+
+has_default_deny_input() {
+    iptables -S INPUT 2>/dev/null | grep -qE '^-A INPUT.*-j (REJECT|DROP)'
+}
+
+iptables_rules_already_open() {
+    iptables -C INPUT -p tcp --dport "$COOLIFY_PORT" -j ACCEPT >/dev/null 2>&1 || return 1
+    iptables -C INPUT -p tcp -m multiport --dports "$APP_PORT_RANGE" -j ACCEPT >/dev/null 2>&1 || return 1
+    return 0
+}
+
+iptables_insert_idempotent() {
+    iptables -C INPUT "$@" >/dev/null 2>&1 || iptables -I INPUT "$@"
+}
+
+persist_iptables() {
+    if command -v netfilter-persistent >/dev/null 2>&1; then
+        netfilter-persistent save >/dev/null 2>&1 && return 0
+    fi
+    if [ -d /etc/iptables ]; then
+        iptables-save > /etc/iptables/rules.v4 2>/dev/null && return 0
+    fi
+    if [ -f /etc/sysconfig/iptables ]; then
+        iptables-save > /etc/sysconfig/iptables 2>/dev/null && return 0
+    fi
+    warn "iptables rules added but couldn't auto-persist — they'll vanish on reboot."
+    warn "Save manually: sudo iptables-save > /etc/iptables/rules.v4  (or your distro's equivalent)."
+    return 1
+}
+
+if is_oracle_cloud; then
+    if ! command -v iptables >/dev/null 2>&1; then
+        warn "Oracle Cloud detected, but no iptables binary found."
+        warn "If your firewall is nftables / firewalld / ufw, manually allow:"
+        warn "  • TCP ${COOLIFY_PORT} (dashboard)"
+        warn "  • TCP ${APP_PORT_RANGE/:/-} (apps, databases, services, custom compose)"
+        warn "Also open these in the OCI VCN Security List (Networking → VCN → Subnet → Ingress)."
+    elif ! has_default_deny_input; then
+        :
+    elif iptables_rules_already_open; then
+        success "Oracle Cloud iptables already permits dashboard + ${APP_PORT_RANGE/:/-} TCP range."
+    else
+        warn "Oracle Cloud detected with a default-deny iptables INPUT chain."
+        warn "Without ACCEPT rules above the REJECT, the dashboard (port $COOLIFY_PORT) and every"
+        warn "deployed app / database / service host port will be silently dropped from outside the VM."
+        FIX_IPTABLES=0
+        if [ $FORCE -eq 1 ]; then
+            FIX_IPTABLES=1
+        else
+            read -p "Open iptables for dashboard (${COOLIFY_PORT}) + TCP ${APP_PORT_RANGE/:/-}? [Y/n] " yn
+            yn="${yn:-Y}"
+            case $yn in
+            [Yy]*) FIX_IPTABLES=1 ;;
+            esac
+        fi
+        if [ "$FIX_IPTABLES" = "1" ]; then
+            info "Inserting iptables ACCEPT rules…"
+            INSERT_OK=1
+            iptables_insert_idempotent -p tcp --dport "$COOLIFY_PORT" -j ACCEPT || INSERT_OK=0
+            iptables_insert_idempotent -p tcp -m multiport --dports "$APP_PORT_RANGE" -j ACCEPT || INSERT_OK=0
+            if [ "$INSERT_OK" = "1" ]; then
+                persist_iptables && success "iptables opened for dashboard + TCP ${APP_PORT_RANGE/:/-} range."
+            else
+                warn "Could not insert one or more iptables rules — install continues, but"
+                warn "the dashboard and apps will be unreachable from outside until you fix it."
+                warn "Common causes:"
+                warn "  • firewalld / ufw is running and holds the chain — stop or use its CLI instead"
+                warn "  • SELinux / AppArmor blocking root from editing iptables"
+                warn "  • Kernel running nf_tables natively with iptables shim rejecting a rule"
+                warn "Open manually:"
+                warn "  sudo iptables -I INPUT -p tcp --dport ${COOLIFY_PORT} -j ACCEPT"
+                warn "  sudo iptables -I INPUT -p tcp -m multiport --dports ${APP_PORT_RANGE} -j ACCEPT"
+                warn "  sudo netfilter-persistent save   # Ubuntu/Debian"
+                warn "  sudo service iptables save       # Oracle Linux / RHEL"
+            fi
+        else
+            warn "Skipped. To fix manually:"
+            warn "  sudo iptables -I INPUT -p tcp --dport ${COOLIFY_PORT} -j ACCEPT"
+            warn "  sudo iptables -I INPUT -p tcp -m multiport --dports ${APP_PORT_RANGE} -j ACCEPT"
+            warn "  sudo netfilter-persistent save   # Ubuntu/Debian"
+            warn "  sudo service iptables save       # Oracle Linux / RHEL"
+        fi
+        warn "UDP is NOT auto-opened. If you deploy UDP services (wg-easy on 51820,"
+        warn "game servers, custom compose), open their specific ports manually — never the whole range."
+        warn "Reminder: ALSO open these ports in the OCI VCN Security List"
+        warn "(Networking → Virtual Cloud Networks → Subnet → Security List → Ingress)."
+        warn "The VCN Security List is the real access gate on OCI — iptables alone won't help."
+    fi
+fi
+
 # ─── Docker: version check ────────────────────────────────────────────────────
 SERVER_VERSION=$(docker version -f "{{.Server.Version}}" 2>/dev/null || echo "0.0")
 SERVER_MAJOR=$(echo "$SERVER_VERSION" | cut -d'.' -f1)
