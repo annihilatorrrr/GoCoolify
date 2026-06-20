@@ -303,6 +303,25 @@ if [ $PURGE_DOCKER -eq 1 ]; then
     fi
 fi
 
+# ─── Oracle Cloud: remove install-time iptables rules ───────────────────────
+# Mirror of the rules inserted by install.sh so uninstall is a clean inverse.
+# Uses -D (delete) instead of -I (insert); idempotent — no-op if rules absent.
+if command -v iptables >/dev/null 2>&1; then
+    COOLIFY_PORT_LOCAL="${COOLIFY_PORT:-3000}"
+    APP_PORT_RANGE_LOCAL="1024:65535"
+    iptables -D INPUT -p tcp --dport "$COOLIFY_PORT_LOCAL" -j ACCEPT >/dev/null 2>&1 || true
+    iptables -D INPUT -p tcp -m multiport --dports "$APP_PORT_RANGE_LOCAL" -j ACCEPT >/dev/null 2>&1 || true
+    # Persist the removal if possible (same helpers as install.sh).
+    if command -v netfilter-persistent >/dev/null 2>&1; then
+        netfilter-persistent save >/dev/null 2>&1 || true
+    elif [ -d /etc/iptables ]; then
+        iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
+    elif [ -f /etc/sysconfig/iptables ]; then
+        iptables-save > /etc/sysconfig/iptables 2>/dev/null || true
+    fi
+    info "Oracle Cloud iptables rules cleaned up (no-op on non-OCI or rules already absent)"
+fi
+
 # ─── Done ─────────────────────────────────────────────────────────────────────
 echo ""
 echo -e "${GREEN}${BOLD}CoolifyGo fully removed.${NC}"
