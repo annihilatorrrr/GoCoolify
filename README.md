@@ -54,6 +54,7 @@ A single Go binary plus Docker is all you need to host **applications, databases
 | ☁️ Run on **free-tier cloud** | Oracle Cloud ARM Ampere A1 (4 vCPU / 24 GB free forever), Hetzner CAX11, AWS Lightsail |
 | 🍓 Self-host on a **Raspberry Pi 5** | full ARM64 support, idle footprint under 100 MB RAM |
 | 📁 Self-host SaaS apps | Nextcloud, Vaultwarden, Gitea, Grafana, Uptime Kuma — all one-click |
+| 🛡️ Self-host **VPN + private DNS** | wg-easy (WireGuard, one-tap from phone) or Headscale (self-hosted Tailscale coordinator); AdGuard Home blocks ads network-wide; DNSCrypt-Proxy encrypts the upstream so your ISP can't read DNS |
 | 💾 **Backup-first DB hosting** | every managed Postgres / MySQL / MongoDB / Redis ships scheduled dumps to Telegram or local disk out of the box, plus one-click restore |
 
 ---
@@ -388,6 +389,19 @@ Deploy any of these from **Services → + New Service**:
 | 📡 **Prometheus** | Metrics collection | Time-series scraping + storage |
 | 🔐 **Vaultwarden** | Password manager | Self-hosted Bitwarden-compatible vault |
 | 🐙 **Gitea** | Self-hosted Git | Lightweight GitHub-compatible Git service |
+| ✍️ **Ghost** | Blog / CMS | Modern headless publishing platform |
+| 📸 **Immich** | Photos & videos | Self-hosted Google Photos replacement with face recognition |
+| 🛂 **Authentik** | SSO / IdP | OIDC + SAML + LDAP identity provider |
+| 📄 **Stirling-PDF** | PDF utilities | In-browser merge / split / OCR / sign |
+| 📂 **File Browser** | File management | Web UI for browsing and managing a directory tree |
+| 🔁 **n8n** | Workflow automation | Zapier-style flows with 400+ integrations |
+| 🗃️ **Adminer** | DB management | Universal database UI (single PHP file) |
+| 🐛 **GlitchTip** | Error tracking | Sentry-compatible error/performance monitoring |
+| ✈️ **Teleproxy** | Telegram proxy | MTProto proxy with fake-TLS camouflage + DPI resistance |
+| 🛡️ **wg-easy** | WireGuard VPN | Self-hosted VPN with admin web UI — one-tap connect from the WireGuard phone app |
+| 🚫 **AdGuard Home** | DNS ad blocker | Network-wide ad/tracker blocking — your own `dns.adguard.com` |
+| 🔒 **DNSCrypt-Proxy** | Encrypted DNS upstream | DoH / DNSCrypt forwarder — pair with AdGuard to hide DNS lookups from your ISP |
+| 🌐 **Headscale** | Mesh VPN | Self-hosted Tailscale coordinator — devices use the official Tailscale apps (one-tap connect) |
 
 Each detail page surfaces admin URLs + first-login credentials in a quick-access panel.
 
@@ -652,5 +666,8 @@ Docker Compose deployment, GitHub auto-deploy, self-hosted Heroku, free hosting,
 Coolify v3 Go rewrite, CoolifyGo, Coolify go, Nextcloud one-click, Vaultwarden one-click,
 Gitea one-click, Uptime Kuma, one-click, Grafana self-host, Prometheus self-host,
 self-host PaaS Go single binary, restore PostgreSQL from dump, restore MySQL backup,
-restore MongoDB archive, Redis RDB restore.
+restore MongoDB archive, Redis RDB restore, self-hosted VPN, self-host WireGuard, wg-easy,
+WireGuard web UI, self-hosted Tailscale, Headscale, mesh VPN, self-hosted DNS, AdGuard Home,
+network-wide ad blocker, encrypted DNS, DNS over HTTPS, DoH, DNSCrypt, dnscrypt-proxy,
+hide DNS from ISP, self-hosted dns.adguard.com.
 -->
