@@ -81,6 +81,7 @@ A single Go binary plus Docker is all you need to host **applications, databases
 - **Sysctls + Init** — `HostConfig.Sysctls` (e.g. `net.core.somaxconn=1024`) and `HostConfig.Init=true` (zombie reaping) toggleable in the UI.
 - **Bot apps** — set `is_bot=true` and the app runs without a host port binding (Discord/Telegram bots, workers). Reachable on the internal `coolify` Docker network by container name.
 - **Webhook Audit Tab** — per-app last 50 webhook deliveries with signature status, deploy outcome, raw payload.
+- **🔒 Config Lock** — build-affecting fields are read-only while a deploy is running so a mid-flight edit can't break the running build. **Name** and **Auto-Deploy** stay editable in every state.
 
 </details>
 
@@ -91,7 +92,8 @@ A single Go binary plus Docker is all you need to host **applications, databases
 - **One-click create wizard** — pick type, version, port. Root + app credentials auto-generated and shown.
 - **Auto port allocation** — toggle "Expose publicly" and a free host port is assigned from your configured range (default 9000–9100).
 - **Internal + external connection strings** — internal uses the container hostname for in-network apps; external shows server IP + public port when exposed.
-- **🧹 VACUUM FULL** (Postgres) — one-click reclaim from the Databases UI. Live plain-text output of `VACUUM (FULL, VERBOSE)`. 30-min server cap, single-flight per DB.
+- **🐘 Shared PostgreSQL Cluster Mode** (opt-in) — flip a toggle in **Settings → Databases** and every "PostgreSQL database" you create becomes a logical DB inside **one** shared Postgres container instead of one container per DB. Saves dozens of GB of RAM when you host many small bots / workers. Each logical gets its own user, database, isolated permissions, dedicated backup / restore / vacuum schedule, and a ready-to-copy `postgresql://` connection URL. Cluster can optionally be made public (binds a host port) for external clients; logicals stay private. Minor PG version upgrades are one-click; majors need a manual dump-restore. Toggle is symmetric and only available when you have zero PG rows so you can't trap yourself in one mode.
+- **🧹 VACUUM FULL** (Postgres) — one-click reclaim from the Databases UI. Live progress output. Safe to run on busy databases.
 - **Per-database logs + CPU/mem stats** — live WebSocket stream.
 
 </details>
@@ -100,12 +102,12 @@ A single Go binary plus Docker is all you need to host **applications, databases
 <summary><b>💾 Backups & Restore</b> — scheduled, manual, one-click restore (NEW ⭐)</summary>
 
 - **📅 Scheduled backups** — per-DB cron schedule with a **preset dropdown** (Off / Hourly / Every 6 h / Every 12 h / Daily 1 AM / Daily 4 AM / Daily midnight / Weekly Sunday / Monthly / Custom) plus free-text cron input.
-- **🔧 Dump tools** — Postgres `pg_dump -b -Fc -Z 9`, MySQL `mysqldump --single-transaction --quick --all-databases | gzip`, MongoDB `mongodump --archive --gzip`, Redis `BGSAVE` + RDB (non-blocking on Redis 7).
-- **📨 Telegram delivery** — gzipped dump streamed as a Telegram document. 50 MB pre-flight + 429 rate-limit retry handled.
+- **🔧 Compressed dumps** — every DB type gets a format-native compressed dump (Postgres custom format, MySQL gzip, MongoDB gzipped archive, Redis RDB) — small and fast to upload.
+- **📨 Telegram delivery** — dump streamed as a Telegram document. 50 MB pre-flight + Telegram rate-limit retry handled automatically.
 - **🎯 Per-DB Telegram override** — give one database a different bot/chat for a noisy app, falls back to global settings otherwise.
-- **💽 Local fallback** — when no Telegram is configured, dumps land under `/data/coolifygo/backups/<slug>/` with atomic write-and-rename. Orphan partial files reaped on boot. 2 newest files kept per DB.
-- **♻️ One-click Restore** — upload a dump file **OR** pick from saved local backups. Live WebSocket log during restore. Postgres tries `pg_restore` → falls back to `psql` for plain-text. MySQL `gunzip | mysql`. MongoDB `mongorestore --gzip --archive`. Redis swaps the RDB and auto-restarts (~2 s downtime).
-- **🎛️ Restore flags** — checkboxes for Postgres: **Clean** (`-c --if-exists`), **Create** (`--create`), **Data only** (`-a`), **Schema only** (`-s`).
+- **💽 Local fallback** — when no Telegram is configured, dumps land safely on disk under your data directory. Last 2 files kept per DB.
+- **♻️ One-click Restore** — upload a dump file **OR** pick from saved local backups. Live log during restore. Works with both Postgres binary dumps and plain-text `.sql` files. MySQL, MongoDB, Redis all symmetric to backup.
+- **🎛️ Restore flags** — Postgres options surfaced as checkboxes: **Clean**, **Create**, **Data only**, **Schema only**.
 - **🏠 Self-backup (coolifygo's own DB)** — back up the platform's own state (users, apps, settings, encrypted credentials) on its own cron. Toggle to use the global Notifications Telegram or a dedicated bot/chat.
 - **🔁 Self-restore** — restore the platform DB from an uploaded `.dump` file or saved local backup. Perfect for **migrating CoolifyGo between hosts**.
 - **📜 Backup history** — last 3 attempts per DB shown in the UI with status, size, error message on failure.
@@ -122,7 +124,7 @@ A single Go binary plus Docker is all you need to host **applications, databases
 - **🧼 Cleanup Scheduler** — image prune, stopped-container prune, build-cache prune every 15 minutes. Optional volume prune is manual-only. Disk-usage warning badge above a configurable threshold.
 - **🚦 Active Deploys Panel** — pinned to the dashboard, live cancel buttons, 5-second auto-refresh.
 - **📜 Activity Log** — last 25 hours of state-changing requests, searchable in **Settings → Security Log**. Useful for spotting unexpected actions or unfamiliar IPs.
-- **📊 Runtime Stats Panel** — goroutines, heap, sys mem, GC, asynq queue depths, Postgres DB size, Redis memory + key count, pool counters. Polled every 5 seconds on the Servers page.
+- **📊 Runtime Stats Panel** — memory, GC, job queue depths, Postgres DB size, Redis memory + key count, connection-pool counters. Polled every 5 seconds on the Servers page.
 - **📺 Real-time Logs** — live WebSocket streaming for app logs, build logs, DB logs, service logs, restore logs.
 - **🌍 Global Timezone** — single IANA tz setting drives every cron evaluation, backup filename stamp, and stored-timestamp display in the UI. Default `Asia/Kolkata` (IST), change to anything (UTC, Europe/London, America/New_York, etc.).
 - **🖥️ Multi-server fleet** — register additional Linux hosts via SSH key + password-less sudo Docker. Deploy any app/DB/service to any registered server. Health-check button per server.
@@ -136,7 +138,9 @@ A single Go binary plus Docker is all you need to host **applications, databases
 - **GitLab** webhook token verification (`X-Gitlab-Token`) — shared secret.
 - **Gitea** + **Bitbucket** push webhooks supported.
 - **GitHub App** — one-app-many-repos centralised flow. Manifest installation, automatic per-installation tokens (cached in Redis with TTL).
+- **🦊 GitLab + 🍃 Gitea OAuth** — paste `client_id` + `client_secret` from the provider's UI, click Authorize, you're in. Same repo + branch picker UX as the GitHub App. Tokens stay fresh automatically.
 - **SSH-key sources** — for repos that need ssh:// auth. Keys stored encrypted at rest.
+- **🔐 Trust-On-First-Use SSH** — remote servers have their SSH host key captured on first connect and verified on every subsequent dial. Mismatch = refused. Protects against man-in-the-middle on remote hosts.
 
 </details>
 
@@ -405,6 +409,8 @@ Deploy any of these from **Services → + New Service**:
 
 Each detail page surfaces admin URLs + first-login credentials in a quick-access panel.
 
+**🔄 Update with instant + 10-min Rollback** — the **Update** button on every service pulls the latest images and recreates the stack. If pull or compose-up fails, the previous images are automatically restored (instant rollback, you never see the broken state). On success a **Rollback** button stays visible for 10 minutes so you can flip back to the previous images if the new version misbehaves. Data volumes are not rolled back — only image refs.
+
 ---
 
 ## 📡 Auto-Deploy Webhooks
@@ -439,11 +445,11 @@ Every managed database (Postgres / MySQL / MongoDB / Redis) ships scheduled back
 
 **♻️ Restore:**
 - Upload a dump file from your machine, OR pick from saved local backups in a dropdown.
-- **Postgres:** tries `pg_restore` then falls back to `psql` for plain-text `.sql` / `.sql.gz`. Flag checkboxes: Clean / Create / Data-only / Schema-only.
-- **MySQL:** `gunzip | mysql` inside the container.
-- **MongoDB:** `mongorestore --gzip --archive`.
+- **Postgres:** handles both binary dumps and plain-text `.sql` / `.sql.gz`. Flag checkboxes: Clean / Create / Data-only / Schema-only.
+- **MySQL:** gzipped SQL.
+- **MongoDB:** gzipped archive.
 - **Redis:** swaps the RDB and auto-restarts (~2 s downtime).
-- Live log stream over WebSocket during the entire operation.
+- Live log stream during the entire operation.
 
 **🏠 Self-Backup:** CoolifyGo can back up its own state (users, apps, settings, encrypted credentials) on its own cron. Configure under **Settings → Updates → Self-backup**. Choose between sharing the global Notifications Telegram or setting a dedicated bot/chat for system backups only. Restore from upload or saved local file — perfect for **migrating CoolifyGo between hosts**.
 
@@ -600,7 +606,7 @@ GET    /api/v1/internal/system-restore/{aID}/logs   ← WebSocket — live resto
 # Maintenance & Platform
 POST   /api/v1/internal/cleanup                     ← Docker prune; ?volumes=true for volumes
 POST   /api/v1/internal/cleanup/unconfigured        ← drop half-made apps/dbs/services older than 1 h
-POST   /api/v1/internal/reset-queue                 ← reset all asynq queues
+POST   /api/v1/internal/reset-queue                 ← reset background job queues
 GET    /api/v1/internal/version                     ← current version
 GET    /api/v1/internal/update/check                ← GHCR tag check (cached); ?force=true to bypass
 POST   /api/v1/internal/update/run                  ← swap to latest image via helper container
@@ -624,7 +630,7 @@ GET    /health                                      ← {"status":"ok","service"
 | Language | 🐹 Go 1.26 |
 | Router | chi v5 |
 | Database | 🐘 PostgreSQL v17 + pgx/v5 |
-| Schema | Single embedded `internal/db/schema.sql`, applied idempotently on every boot — no migrations layer |
+| Schema | Single embedded schema, applied idempotently on every boot — no migrations layer to manage |
 | Docker | 🐳 Docker SDK v28 — pure Go, no shell-out (except Compose plugin) |
 | SSH | golang.org/x/crypto/ssh |
 | Git | go-git/go-git/v5 — recursive submodules, native HTTPS + SSH transports |
