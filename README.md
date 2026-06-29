@@ -10,7 +10,7 @@ A pure mini reimplementation of [Coolify's v3 Branch](https://github.com/coollab
 [![DeepSource](https://app.deepsource.com/gh/annihilatorrrr/coolifygo.svg/?label=active+issues&show_trend=true&token=ymMYtFVTG4J5NzFqTkiqzwUZ)](https://app.deepsource.com/gh/annihilatorrrr/coolifygo/)
 
 ## Note:
-> 📦 This repo is just made for actions like Bug reports, Issues, Feature requests, Update, Install, Uninstall only; Codebase is kept private because of heavy commit spam / unwanted or unseen security bugs. If you find one, you can raise an issue to get it fixed. Don't worry — there is no virus/malware in the codebase or binary, test it before using! 🛡️
+> 📦 This repo is just made for actions like Bug reports, Issues, Feature requests, Update, Install, Uninstall only; Codebase is kept private because of heavy commit spam / unwanted or unseen security bugs. If you find one, you can raise an issue to get it fixed. Don't worry — there is no virus/malware or any type of trackers in the codebase or binary, test it before using! 🛡️
 
 [![Go](https://img.shields.io/badge/Go-1.26-00ADD8?logo=go)](https://go.dev)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
