@@ -11,6 +11,12 @@ set -euo pipefail
 
 SCRIPT_VERSION="v2.0.0"
 ARCH=$(uname -m)
+case "$ARCH" in
+    x86_64|amd64)   DOCKER_PLATFORM="linux/amd64" ;;
+    aarch64|arm64)  DOCKER_PLATFORM="linux/arm64" ;;
+    armv7l)         DOCKER_PLATFORM="linux/arm/v7" ;;
+    *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;;
+esac
 WHO=$(whoami)
 DEBUG=0
 FORCE=0
@@ -414,8 +420,8 @@ mkdir -p "$COOLIFY_DIR"
 success "Data directory: $COOLIFY_DIR"
 
 # ─── Pull image from ghcr.io (anonymous, public package) ──────────────────────
-info "Pulling image $IMAGE…"
-docker pull "$IMAGE" || die "Failed to pull image. Check network connectivity to ghcr.io."
+info "Pulling image $IMAGE ($DOCKER_PLATFORM)…"
+docker pull --platform "$DOCKER_PLATFORM" "$IMAGE" || die "Failed to pull image. Check network connectivity to ghcr.io."
 success "Image pulled."
 
 # ─── Start container ──────────────────────────────────────────────────────────
