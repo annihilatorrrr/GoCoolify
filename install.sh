@@ -424,6 +424,14 @@ docker_run_coolifygo || die "Failed to start CoolifyGo container."
 success "Container started."
 
 # ─── systemd service ──────────────────────────────────────────────────────────
+# The service file hardcodes /usr/bin/docker so upgrades that temporarily
+# move the binary don't break the unit. If docker landed elsewhere, symlink it.
+if [ ! -x /usr/bin/docker ]; then
+    DOCKER_REAL=$(command -v docker 2>/dev/null) \
+        || die "docker not found on PATH"
+    ln -sf "$DOCKER_REAL" /usr/bin/docker
+    info "symlinked $DOCKER_REAL → /usr/bin/docker for systemd"
+fi
 cat > /etc/systemd/system/coolifygo.service <<'EOF'
 [Unit]
 Description=CoolifyGo — Self-hosted PaaS
