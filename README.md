@@ -51,7 +51,7 @@ A single Go binary plus Docker is all you need to host **applications, databases
 | Use case | Notes |
 |---|---|
 | 🟢 Replace **Heroku / Render / Vercel** | for personal + side-project hosting |
-| ☁️ Run on **free-tier cloud** | Oracle Cloud ARM Ampere A1 (4 vCPU / 24 GB free forever), Hetzner CAX11, AWS Lightsail |
+| ☁️ Run on **free-tier cloud** | Oracle Cloud ARM Ampere A1 (2 vCPU / 12 GB free forever), Hetzner CAX11, AWS Lightsail |
 | 🍓 Self-host on a **Raspberry Pi 5** | full ARM64 support, idle footprint under 100 MB RAM |
 | 📁 Self-host SaaS apps | Nextcloud, Vaultwarden, Gitea, Grafana, Uptime Kuma — all one-click |
 | 🛡️ Self-host **VPN + private DNS** | wg-easy (WireGuard, one-tap from phone) or Headscale (self-hosted Tailscale coordinator); AdGuard Home blocks ads network-wide; DNSCrypt-Proxy encrypts the upstream so your ISP can't read DNS |
@@ -165,7 +165,7 @@ A single Go binary plus Docker is all you need to host **applications, databases
 - Docker: required (host)
 - OS: any 64-bit Linux that runs current Docker; binary is multi-arch (amd64 + arm64).
 
-> Oracle Cloud's Always Free A1 (4 OCPU, 24 GB RAM, ARM) is well above this — perfect fit.
+> Oracle Cloud's Always Free A1 (2 OCPU, 12 GB RAM, ARM) is well above this — perfect fit.
 
 ---
 
@@ -194,7 +194,7 @@ The Docker image and standalone binaries ship for both `linux/amd64` and `linux/
 | Platform | Arch | Notes |
 |---|---|---|
 | Most VPS / bare metal | `amd64` | Default. ≥1 GB RAM recommended. |
-| ☁️ **Oracle Cloud — Ampere A1** | `arm64` | **Best free target.** Up to 4 OCPU / 24 GB RAM free forever. Open dashboard port (3000) in the **VCN security list** and `firewall-cmd --add-port=3000/tcp --permanent`. |
+| ☁️ **Oracle Cloud — Ampere A1** | `arm64` | **Best free target.** Up to 2 OCPU / 12 GB RAM free forever. Open dashboard port (3000) in the **VCN security list** and `firewall-cmd --add-port=3000/tcp --permanent`. |
 | Oracle Cloud — AMD micro | `amd64` | Tight at 1 GB RAM. Plan 1 small app per VM. |
 | 🍓 **Raspberry Pi 5** | `arm64` | 64-bit Pi OS / Ubuntu Server required. 8 GB / 16 GB models comfortably run a handful of apps. |
 | Hetzner Cloud (CX / CAX) | both | CAX11 ARM is great budget value. |
