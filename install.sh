@@ -96,7 +96,7 @@ docker_run_coolifygo() {
         -v /var/run:/var/run \
         -v "${COOLIFY_DIR}:/data/coolifygo" \
         -e COOLIFY_DATA_DIR=/data/coolifygo \
-        -e COOLIFY_PORT="${COOLIFY_PORT}" \
+        -e SERVER_PORT="${COOLIFY_PORT}" \
         "${IMAGE}"
 }
 
