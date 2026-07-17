@@ -20,7 +20,7 @@
 #     -v /var/run:/var/run \
 #     -v /data/coolifygo:/data/coolifygo \
 #     -e COOLIFY_DATA_DIR=/data/coolifygo \
-#     -e COOLIFY_PORT=3000 \
+#     -e SERVER_PORT=3000 \
 #     ghcr.io/annihilatorrrr/coolifygo:bak
 #   systemctl restart coolifygo
 #
@@ -105,7 +105,7 @@ SERVICE="/etc/systemd/system/coolifygo.service"
 
 # Read port from running container env if available, fall back to default.
 RUNNING_PORT=$(docker inspect coolifygo --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null \
-    | grep '^COOLIFY_PORT=' | cut -d= -f2 || echo "")
+    | grep '^SERVER_PORT=' | cut -d= -f2 || echo "")
 PORT="${RUNNING_PORT:-$COOLIFY_PORT}"
 
 echo ""
@@ -159,7 +159,7 @@ docker rm coolifygo 2>/dev/null || true
 success "Old container removed"
 
 info "Starting new container…"
-docker run -d --name coolifygo --restart no --network host -v /var/run:/var/run -v "${COOLIFY_DIR}:/data/coolifygo" -e COOLIFY_DATA_DIR=/data/coolifygo -e COOLIFY_PORT="${PORT}" "${IMAGE}" || die "Failed to start new container. Rollback: docker run ... ${IMAGE_BAK}"
+docker run -d --name coolifygo --restart no --network host -v /var/run:/var/run -v "${COOLIFY_DIR}:/data/coolifygo" -e COOLIFY_DATA_DIR=/data/coolifygo -e SERVER_PORT="${PORT}" "${IMAGE}" || die "Failed to start new container. Rollback: docker run ... ${IMAGE_BAK}"
 success "Container started"
 
 # ─── Step 4: Health check ─────────────────────────────────────────────────────
@@ -175,7 +175,7 @@ done
 
 if [ $READY -eq 0 ]; then
     warn "Health check timed out — check logs: docker logs coolifygo -f"
-    warn "Rollback: docker stop coolifygo && docker rm coolifygo && docker run -d --name coolifygo --restart no -p ${PORT}:${PORT} -v /var/run:/var/run -v ${COOLIFY_DIR}:/data/coolifygo -e COOLIFY_DATA_DIR=/data/coolifygo -e COOLIFY_PORT=${PORT} ${IMAGE_BAK}"
+    warn "Rollback: docker stop coolifygo && docker rm coolifygo && docker run -d --name coolifygo --restart no --network host -v /var/run:/var/run -v ${COOLIFY_DIR}:/data/coolifygo -e COOLIFY_DATA_DIR=/data/coolifygo -e SERVER_PORT=${PORT} ${IMAGE_BAK}"
 fi
 
 # ─── Step 5: API cleanup (optional) ───────────────────────────────────────────
@@ -202,7 +202,7 @@ fi
 echo ""
 echo -e "  Dashboard : http://${SERVER_IP}:${PORT}"
 echo -e "  Logs      : docker logs coolifygo -f"
-echo -e "  Rollback  : docker stop coolifygo && docker rm coolifygo && docker run -d --name coolifygo --restart no -p ${PORT}:${PORT} -v /var/run:/var/run -v ${COOLIFY_DIR}:/data/coolifygo -e COOLIFY_DATA_DIR=/data/coolifygo -e COOLIFY_PORT=${PORT} ${IMAGE_BAK}"
+echo -e "  Rollback  : docker stop coolifygo && docker rm coolifygo && docker run -d --name coolifygo --restart no --network host -v /var/run:/var/run -v ${COOLIFY_DIR}:/data/coolifygo -e COOLIFY_DATA_DIR=/data/coolifygo -e SERVER_PORT=${PORT} ${IMAGE_BAK}"
 echo ""
 echo -e "${YELLOW}${BOLD}REMINDER:${NC} Never run 'docker image prune -a' directly on this server."
 echo -e "          Use Settings → Docker Cleanup in the dashboard instead."
