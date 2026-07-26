@@ -48,14 +48,14 @@ A single Go binary plus Docker is all you need to host **applications, databases
 
 **Common use cases:**
 
-| Use case | Notes |
-|---|---|
-| 🟢 Replace **Heroku / Render / Vercel** | for personal + side-project hosting |
-| ☁️ Run on **free-tier cloud** | Oracle Cloud ARM Ampere A1 (2 vCPU / 12 GB free forever), Hetzner CAX11, AWS Lightsail |
-| 🍓 Self-host on a **Raspberry Pi 5** | full ARM64 support, idle footprint under 100 MB RAM |
-| 📁 Self-host SaaS apps | Nextcloud, Vaultwarden, Gitea, Grafana, Uptime Kuma — all one-click |
+| Use case | Notes                                                                                                                                                                                           |
+|---|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 🟢 Replace **Heroku / Render / Vercel** | for personal + side-project hosting                                                                                                                                                             |
+| ☁️ Run on **free-tier cloud** | Oracle Cloud ARM Ampere A1 (2 vCPU / 12 GB free forever), Hetzner CAX11, AWS Lightsail                                                                                                          |
+| 🍓 Self-host on a **Raspberry Pi 5** | full ARM64 support, idle footprint under 100 MB RAM                                                                                                                                             |
+| 📁 Self-host SaaS apps | Nextcloud, Vaultwarden, Gitea, Grafana, Uptime Kuma — all one-click                                                                                                                             |
 | 🛡️ Self-host **VPN + private DNS** | wg-easy (WireGuard, one-tap from phone) or Headscale (self-hosted Tailscale coordinator); AdGuard Home blocks ads network-wide; DNSCrypt-Proxy encrypts the upstream so your ISP can't read DNS |
-| 💾 **Backup-first DB hosting** | every managed Postgres / MySQL / MongoDB / Redis ships scheduled dumps to Telegram or local disk out of the box, plus one-click restore |
+| 💾 **Backup-first DB hosting** | every managed Postgres / MySQL / MongoDB / Redis ships scheduled dumps to Telegram or local disk out of the box, plus one-click restore                                                         |
 
 ---
 
@@ -119,7 +119,7 @@ A single Go binary plus Docker is all you need to host **applications, databases
 <summary><b>⚙️  Platform Operations</b></summary>
 
 - **🆙 Self-Update from the UI** — Settings → Updates checks GHCR for newer tags, "Update Now" spawns a one-shot helper container that swaps the running CoolifyGo in place (~5 s downtime). Previous image tagged `:bak` for emergency rollback. Auto-update toggle pulls the latest image daily so the next manual swap is instant.
-- **🔁 Self-Restart from the UI** — same helper-container pattern, no pull, useful after editing env vars on the host.
+- **🔁 Self-Restart & Reboot from the UI** — **Restart** cycles CoolifyGo in place (fast, no downtime gap); **Reboot** does a full teardown-and-recreate for a clean slate. Both run without pulling a new image.
 - **🩹 Boot Reconciler** — 60-second ticker recreates any container marked "running" in the DB that Docker has lost track of (crash-loop exhausted, manually stopped, daemon hiccup). Closes the gap Docker's `unless-stopped` policy leaves after backoff exhaustion.
 - **🧼 Cleanup Scheduler** — image prune, stopped-container prune, build-cache prune every 15 minutes. Optional volume prune is manual-only. Disk-usage warning badge above a configurable threshold.
 - **🚦 Active Deploys Panel** — pinned to the dashboard, live cancel buttons, 5-second auto-refresh.
@@ -191,14 +191,14 @@ After install, open `http://<server-ip>:3000` and register your first (and only)
 
 The Docker image and standalone binaries ship for both `linux/amd64` and `linux/arm64`. The install script auto-detects architecture.
 
-| Platform | Arch | Notes |
-|---|---|---|
-| Most VPS / bare metal | `amd64` | Default. ≥1 GB RAM recommended. |
+| Platform | Arch | Notes                                                                                                                                                                    |
+|---|---|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Most VPS / bare metal | `amd64` | Default. ≥1 GB RAM recommended.                                                                                                                                          |
 | ☁️ **Oracle Cloud — Ampere A1** | `arm64` | **Best free target.** Up to 2 OCPU / 12 GB RAM free forever. Open dashboard port (3000) in the **VCN security list** and `firewall-cmd --add-port=3000/tcp --permanent`. |
-| Oracle Cloud — AMD micro | `amd64` | Tight at 1 GB RAM. Plan 1 small app per VM. |
-| 🍓 **Raspberry Pi 5** | `arm64` | 64-bit Pi OS / Ubuntu Server required. 8 GB / 16 GB models comfortably run a handful of apps. |
-| Hetzner Cloud (CX / CAX) | both | CAX11 ARM is great budget value. |
-| 🍎 Apple Silicon Macs (dev only) | `arm64` | Use Docker Desktop; not for production. |
+| Oracle Cloud — AMD micro | `amd64` | Tight at 1 GB RAM. Plan 1 small app per VM.                                                                                                                              |
+| 🍓 **Raspberry Pi 5** | `arm64` | 64-bit Pi OS / Ubuntu Server required. 8 GB / 16 GB models comfortably run a handful of apps.                                                                            |
+| Hetzner Cloud (CX / CAX) | both | CAX11 ARM is great budget value.                                                                                                                                         |
+| 🍎 Apple Silicon Macs (dev only) | `arm64` | Use Docker Desktop; not for production.                                                                                                                                  |
 
 If you're on a fresh Oracle Linux / RHEL box, the installer's `get.docker.com` step covers both `apt` and `dnf` distros.
 
@@ -229,10 +229,10 @@ The previous image is tagged `:bak` before pulling. To rollback:
 docker stop coolifygo && docker rm coolifygo
 docker run -d --name coolifygo --restart no \
   --network host \
-  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /var/run:/var/run \
   -v /data/coolifygo:/data/coolifygo \
   -e COOLIFY_DATA_DIR=/data/coolifygo \
-  -e COOLIFY_PORT=3000 \
+  -e SERVER_PORT=3000 \
   ghcr.io/annihilatorrrr/coolifygo:bak
 systemctl restart coolifygo
 ```
@@ -344,10 +344,10 @@ docker pull ghcr.io/annihilatorrrr/coolifygo:latest
 docker run -d \
   --name coolifygo \
   --network host \
-  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /var/run:/var/run \
   -v /data/coolifygo:/data/coolifygo \
   -e COOLIFY_DATA_DIR=/data/coolifygo \
-  -e COOLIFY_PORT=3000 \
+  -e SERVER_PORT=3000 \
   ghcr.io/annihilatorrrr/coolifygo:latest
 ```
 
@@ -406,6 +406,9 @@ Deploy any of these from **Services → + New Service**:
 | 🚫 **AdGuard Home** | DNS ad blocker | Network-wide ad/tracker blocking — your own `dns.adguard.com` |
 | 🔒 **DNSCrypt-Proxy** | Encrypted DNS upstream | DoH / DNSCrypt forwarder — pair with AdGuard to hide DNS lookups from your ISP |
 | 🌐 **Headscale** | Mesh VPN | Self-hosted Tailscale coordinator — devices use the official Tailscale apps (one-tap connect) |
+| 📋 **MicroBin** | Pastebin & sharing | Feature-rich paste + file sharing — syntax highlighting, QR codes, encryption, burn-after-reading |
+| 🍥 **Opengist** | Git-backed pastebin | Self-hosted GitHub Gist alternative — every snippet is a real Git repo (clone/pull/push over HTTP + SSH) with revision history |
+| 🕷️ **Trawl** | Scraper / bypass | Web scraper that beats Cloudflare + CAPTCHAs — drop-in FlareSolverr replacement for Prowlarr / Jackett / Sonarr / Radarr (bundled Redis cookie cache) |
 
 Each detail page surfaces admin URLs + first-login credentials in a quick-access panel.
 
@@ -675,5 +678,8 @@ self-host PaaS Go single binary, restore PostgreSQL from dump, restore MySQL bac
 restore MongoDB archive, Redis RDB restore, self-hosted VPN, self-host WireGuard, wg-easy,
 WireGuard web UI, self-hosted Tailscale, Headscale, mesh VPN, self-hosted DNS, AdGuard Home,
 network-wide ad blocker, encrypted DNS, DNS over HTTPS, DoH, DNSCrypt, dnscrypt-proxy,
-hide DNS from ISP, self-hosted dns.adguard.com.
+hide DNS from ISP, self-hosted dns.adguard.com, self-hosted pastebin, MicroBin, Opengist,
+GitHub Gist alternative, self-hosted gist, Git-backed pastebin, file sharing,
+FlareSolverr replacement, Cloudflare bypass, CAPTCHA solver, self-hosted scraper, Trawl,
+Prowlarr FlareSolverr, Jackett Cloudflare, Sonarr Radarr proxy.
 -->
