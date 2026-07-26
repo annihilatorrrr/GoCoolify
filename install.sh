@@ -92,6 +92,7 @@ docker_run_coolifygo() {
     docker run -d \
         --name coolifygo \
         --restart no \
+        --init \
         --network host \
         -v /var/run:/var/run \
         -v "${COOLIFY_DIR}:/data/coolifygo" \
