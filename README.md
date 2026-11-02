@@ -1,5 +1,3 @@
-
-
 # CoolifyGo ✨
 
 A pure mini reimplementation of [Coolify's v3 Branch](https://github.com/coollabsio/coolify) in Go — a self-hosted PaaS for deploying applications, databases, and services via Docker and SSH.
@@ -14,9 +12,9 @@ A pure mini reimplementation of [Coolify's v3 Branch](https://github.com/coollab
 ## Note:
 > 📦 This repo is just made for actions like Bug reports, Issues, Feature requests, Update, Install, Uninstall only; Codebase is kept private because of heavy commit spam / unwanted or unseen security bugs. If you find one, you can raise an issue to get it fixed. Don't worry — there is no virus/malware or any type of trackers in the codebase or binary, test it before using! 🛡️
 
-[![Go](https://img.shields.io/badge/Go-1.26-00ADD8?logo=go)](https://go.dev)
+[![Go](https://img.shields.io/badge/Go-1.27-00ADD8?logo=go)](https://go.dev)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Docker](https://img.shields.io/badge/Docker-SDK%20v28-2496ED?logo=docker)](https://docs.docker.com/engine/api/)
+[![Docker](https://img.shields.io/badge/Docker-SDK%20v29-2496ED?logo=docker)](https://docs.docker.com/engine/api/)
 [![ghcr.io](https://img.shields.io/badge/ghcr.io-coolifygo-blue?logo=github)](https://ghcr.io/annihilatorrrr/coolifygo)
 [![Multi-arch](https://img.shields.io/badge/arch-amd64%20%7C%20arm64-blueviolet)](https://ghcr.io/annihilatorrrr/coolifygo)
 [![Mobile](https://img.shields.io/badge/UI-mobile%20%2B%20desktop-ff69b4)]()
@@ -66,7 +64,7 @@ A single Go binary plus Docker is all you need to host **applications, databases
 <details open>
 <summary><b>🏗️  Applications</b> — Dockerfile, Docker Compose, inline, or pull-from-image</summary>
 
-- **Deploy Anything** — Deploy anything using Dockerfile (Currently only Dockerfile/ Compose YAML is supported!).
+- **Deploy Anything** — Deploy anything using a Dockerfile (currently only Dockerfile / Compose YAML is supported!).
 - **Git deploys** — clone any public or private repo, build with **Dockerfile** or **Docker Compose**, run with one click. App reachable at `http://<server-ip>:<port>`.
 - **Git submodules** — recursive `--init` happens automatically on every clone, in pure Go (matches Coolify v3 behaviour without shelling to `git`).
 - **Inline Dockerfile** — paste a Dockerfile in the UI instead of pointing at a repo.
@@ -80,7 +78,8 @@ A single Go binary plus Docker is all you need to host **applications, databases
 - **Full error logs** — when a build fails, the complete persisted log loads, not just the live tail.
 - **Deploy Strategy per-app** — `queue_all` (default), `latest_wins` (drop pending, deploy the newest), or `cancel_redeploy` (cancel running build, start fresh).
 - **Extra Docker Args** — per-app raw `--memory=512m --cpus=1.5 --cap-add=SYS_PTRACE --add-host=…` applied at deploy time.
-- **Sysctls + Init** — `HostConfig.Sysctls` (e.g. `net.core.somaxconn=1024`) and `HostConfig.Init=true` (zombie reaping) toggleable in the UI.
+- **Sysctls** — per-app kernel tunables (e.g. `net.core.somaxconn=1024`) set from the UI.
+- **Init process always on** — every container runs with a tiny init as PID 1, so zombie processes are reaped automatically. Nothing to toggle.
 - **Bot apps** — set `is_bot=true` and the app runs without a host port binding (Discord/Telegram bots, workers). Reachable on the internal `coolify` Docker network by container name.
 - **Webhook Audit Tab** — per-app last 50 webhook deliveries with signature status, deploy outcome, raw payload.
 - **🔒 Config Lock** — build-affecting fields are read-only while a deploy is running so a mid-flight edit can't break the running build. **Name** and **Auto-Deploy** stay editable in every state.
@@ -88,9 +87,9 @@ A single Go binary plus Docker is all you need to host **applications, databases
 </details>
 
 <details>
-<summary><b>🗄️  Managed Databases</b> — PostgreSQL · MySQL · MongoDB · Redis and more ...</summary>
+<summary><b>🗄️  Managed Databases</b> — PostgreSQL · MySQL · MariaDB · MongoDB · Redis · KeyDB</summary>
 
-- **Versions:** PostgreSQL 12 → 18, MySQL 8.0/5.7, MongoDB 4.4/5.0/6.0/7.0, Redis 6.0/6.2/7.0/7.2.
+- **Versions:** PostgreSQL 17/16/15/14, MySQL 8.4, MariaDB 11.4/10.11, MongoDB 8.0, Redis 7.4/7.2/7.0, KeyDB 6.3.4.
 - **One-click create wizard** — pick type, version, port. Root + app credentials auto-generated and shown.
 - **Auto port allocation** — toggle "Expose publicly" and a free host port is assigned from your configured range (default 9000–9100).
 - **Internal + external connection strings** — internal uses the container hostname for in-network apps; external shows server IP + public port when exposed.
@@ -104,12 +103,12 @@ A single Go binary plus Docker is all you need to host **applications, databases
 <summary><b>💾 Backups & Restore</b> — scheduled, manual, one-click restore (NEW ⭐)</summary>
 
 - **📅 Scheduled backups** — per-DB cron schedule with a **preset dropdown** (Off / Hourly / Every 6 h / Every 12 h / Daily 1 AM / Daily 4 AM / Daily midnight / Weekly Sunday / Monthly / Custom) plus free-text cron input.
-- **🔧 Compressed dumps** — every DB type gets a format-native compressed dump (Postgres custom format, MySQL gzip, MongoDB gzipped archive, Redis RDB) — small and fast to upload.
+- **🔧 Compressed dumps** — every DB type gets a format-native compressed dump (Postgres custom format, MySQL/MariaDB gzip, MongoDB gzipped archive, Redis/KeyDB RDB) — small and fast to upload. A failed dump is never kept as a "good" backup.
 - **📨 Telegram delivery** — dump streamed as a Telegram document. 50 MB pre-flight + Telegram rate-limit retry handled automatically.
 - **🎯 Per-DB Telegram override** — give one database a different bot/chat for a noisy app, falls back to global settings otherwise.
 - **💽 Local fallback** — when no Telegram is configured, dumps land safely on disk under your data directory. Last 2 files kept per DB.
-- **♻️ One-click Restore** — upload a dump file **OR** pick from saved local backups. Live log during restore. Works with both Postgres binary dumps and plain-text `.sql` files. MySQL, MongoDB, Redis all symmetric to backup.
-- **🎛️ Restore flags** — Postgres options surfaced as checkboxes: **Clean**, **Create**, **Data only**, **Schema only**.
+- **♻️ One-click Restore** — upload a dump file **OR** pick from saved local backups. Live log during restore. Works with both Postgres binary dumps and plain-text `.sql` files. MySQL/MariaDB, MongoDB, Redis/KeyDB all symmetric to backup. Shared-cluster databases restore into a temporary copy first, so a bad dump never empties the live one.
+- **🎛️ Restore flags** — Postgres options surfaced as checkboxes: **Clean**, **Data only**, **Schema only**.
 - **🏠 Self-backup (coolifygo's own DB)** — back up the platform's own state (users, apps, settings, encrypted credentials) on its own cron. Toggle to use the global Notifications Telegram or a dedicated bot/chat.
 - **🔁 Self-restore** — restore the platform DB from an uploaded `.dump` file or saved local backup. Perfect for **migrating CoolifyGo between hosts**.
 - **📜 Backup history** — last 3 attempts per DB shown in the UI with status, size, error message on failure.
@@ -120,28 +119,28 @@ A single Go binary plus Docker is all you need to host **applications, databases
 <details>
 <summary><b>⚙️  Platform Operations</b></summary>
 
-- **🆙 Self-Update from the UI** — Settings → Updates checks GHCR for newer tags, "Update Now" spawns a one-shot helper container that swaps the running CoolifyGo in place (~5 s downtime). Previous image tagged `:bak` for emergency rollback. Auto-update toggle pulls the latest image daily so the next manual swap is instant.
+- **🆙 Self-Update from the UI** — Settings → Updates checks GHCR for newer tags, "Update Now" spawns a one-shot helper container that swaps the running CoolifyGo in place (~5 s downtime). Previous image tagged `:bak` for emergency rollback. Optional **Auto-update** checks daily and installs a new release by itself — it waits while a deploy or restore is running. A Telegram message tells you whether the update worked.
 - **🔁 Self-Restart & Reboot from the UI** — **Restart** cycles CoolifyGo in place (fast, no downtime gap); **Reboot** does a full teardown-and-recreate for a clean slate. Both run without pulling a new image.
-- **🩹 Boot Reconciler** — 60-second ticker recreates any container marked "running" in the DB that Docker has lost track of (crash-loop exhausted, manually stopped, daemon hiccup). Closes the gap Docker's `unless-stopped` policy leaves after backoff exhaustion.
-- **🧼 Cleanup Scheduler** — image prune, stopped-container prune, build-cache prune every 15 minutes. Optional volume prune is manual-only. Disk-usage warning badge above a configurable threshold.
+- **🩹 Self-Healing** — every 60 s, any app / DB / service that should be running but whose container is gone or dead gets recreated. An app marked errored whose container is actually fine gets its status fixed. If an app's image was deleted (e.g. a manual `docker image prune -a`) and it comes from Git, it is redeployed automatically. A real crash sends an **App crashed** Telegram alert. Your manual Stop and in-flight deploys are never undone.
+- **🧼 Cleanup Scheduler** — image prune, stopped-container prune, build-cache prune every 15 minutes on every server. Never runs in the middle of a build, and stopped apps / DBs are kept so Start still works. Volumes are never pruned automatically (manual only). Disk-usage warning badge above a configurable threshold.
 - **🚦 Active Deploys Panel** — pinned to the dashboard, live cancel buttons, 5-second auto-refresh.
 - **📜 Activity Log** — last 25 hours of state-changing requests, searchable in **Settings → Security Log**. Useful for spotting unexpected actions or unfamiliar IPs.
 - **📊 Runtime Stats Panel** — memory, GC, job queue depths, Postgres DB size, Redis memory + key count, connection-pool counters. Polled every 5 seconds on the Servers page.
 - **📺 Real-time Logs** — live WebSocket streaming for app logs, build logs, DB logs, service logs, restore logs.
 - **🌍 Global Timezone** — single IANA tz setting drives every cron evaluation, backup filename stamp, and stored-timestamp display in the UI. Default `Asia/Kolkata` (IST), change to anything (UTC, Europe/London, America/New_York, etc.).
-- **🖥️ Multi-server fleet** — register additional Linux hosts via SSH key + password-less sudo Docker. Deploy any app/DB/service to any registered server. Health-check button per server.
+- **🖥️ Multi-server fleet** — register additional Linux hosts via SSH key + password-less sudo Docker. Deploy any app/DB/service to any registered server. Health-check button per server. Builds run in parallel across servers, one at a time per server.
 
 </details>
 
 <details>
 <summary><b>📡 Webhooks & Git Sources</b></summary>
 
-- **GitHub** webhook signature verification (`X-Hub-Signature-256`) with per-app HMAC secret — rotatable from the UI.
-- **GitLab** webhook token verification (`X-Gitlab-Token`) — shared secret.
-- **Gitea** + **Bitbucket** push webhooks supported.
+- **Per-app webhooks** — every app has its own secret (rotatable from the UI). GitHub, GitLab, Gitea and Bitbucket pushes are accepted; pushes to other branches and tag pushes are ignored.
+- **🔒 Fail-closed verification** — every webhook must carry its secret (`X-Hub-Signature-256`, `X-Gitlab-Token`, `X-Gitea-Signature`, or `X-Webhook-Secret` for scripts / other callers). Unsigned or forged deliveries are rejected.
 - **GitHub App** — one-app-many-repos centralised flow. Manifest installation, automatic per-installation tokens (cached in Redis with TTL).
-- **🦊 GitLab + 🍃 Gitea OAuth** — paste `client_id` + `client_secret` from the provider's UI, click Authorize, you're in. Same repo + branch picker UX as the GitHub App. Tokens stay fresh automatically.
-- **SSH-key sources** — for repos that need ssh:// auth. Keys stored encrypted at rest.
+- **🦊 GitLab + 🍃 Gitea OAuth** — paste `client_id` + `client_secret` from the provider's UI, click Authorize, you're in. Same repo + branch picker UX as the GitHub App. Tokens stay fresh automatically. One webhook URL per source (secret shown on the source card) auto-deploys every app linked to it.
+- **Repo renames follow you** — when a repo is renamed or transferred, apps linked through the GitHub App update their repo URL automatically.
+- **SSH-key sources** — for repos that need ssh:// auth. Keys and tokens stored encrypted at rest.
 - **🔐 Trust-On-First-Use SSH** — remote servers have their SSH host key captured on first connect and verified on every subsequent dial. Mismatch = refused. Protects against man-in-the-middle on remote hosts.
 
 </details>
@@ -155,8 +154,9 @@ A single Go binary plus Docker is all you need to host **applications, databases
 - **⛔ Port conflict guard** — creating or editing an app/DB port is rejected with a clear 409 if that port is already used.
 - **🟢 Zero server setup** — the box CoolifyGo runs on is auto-registered as a `type=local` server on first boot. Wizards auto-skip the destination step when only one server exists.
 - **👤 Single-user system** — first account is the admin; registration is disabled afterwards.
-- **🔑 API tokens** — full REST API, bearer tokens (also accepted as `?token=` for WebSocket connections). Create / revoke from **Settings → API Tokens**.
-- **📨 Telegram Notifications** — deploy success/fail and backup outcomes pushed to a chat via **Settings → Notifications**.
+- **🔐 One session at a time** — signing in anywhere logs out the previous session; logout and password changes end it everywhere (other open tabs included). 5 wrong logins from one IP → 15-minute lockout.
+- **🔑 API tokens** — full REST API, bearer tokens (also accepted as `?token=` for WebSocket connections). Create / revoke from **Settings → API Tokens**. Changing your password revokes every token.
+- **📨 Telegram Notifications** — deploy started / success / failed, app crashed, backup success / failed, and self-update success / failed, pushed to a chat via **Settings → Notifications**. Retries on Telegram rate limits; a cancelled deploy still sends its alert.
 
 </details>
 
@@ -229,7 +229,7 @@ The previous image is tagged `:bak` before pulling. To rollback:
 
 ```bash
 docker stop coolifygo && docker rm coolifygo
-docker run -d --name coolifygo --restart no \
+docker run -d --name coolifygo --restart no --init \
   --network host \
   -v /var/run:/var/run \
   -v /data/coolifygo:/data/coolifygo \
@@ -313,7 +313,7 @@ Go to **Settings → Updates**. Pick your IANA timezone (default `Asia/Kolkata` 
 
 ## 🔑 Forgot Password
 
-If you're locked out, trigger a password reset from the login page. The new password is written to:
+Click **Forgot password** on the login page and enter the admin email. Nothing is reset — CoolifyGo tells you where your current sign-in details are saved on the server:
 
 ```
 /data/coolifygo/coolifygo-password.txt
@@ -325,7 +325,7 @@ Read it on your server:
 cat /data/coolifygo/coolifygo-password.txt
 ```
 
-The file is always overwritten — no duplicates accumulate. After logging in, change your password via **Settings → Profile**.
+The file is kept up to date whenever you change your password (readable by root only). After logging in you can change your password via **Settings → Profile**. Forgot-password shares the login lockout: 5 tries per IP, then 15 minutes.
 
 ---
 
@@ -345,6 +345,7 @@ docker pull ghcr.io/annihilatorrrr/coolifygo:latest
 
 docker run -d \
   --name coolifygo \
+  --restart no --init \
   --network host \
   -v /var/run:/var/run \
   -v /data/coolifygo:/data/coolifygo \
@@ -359,7 +360,7 @@ docker run -d \
 docker build -f docker/Dockerfile -t coolifygo:latest .
 ```
 
-Two-stage build (`golang:1.26-alpine` builder → `alpine:3.23` runtime). Final image bundles the Docker CLI + Compose plugin so multi-service apps work out of the box. Multi-arch via Go cross-compilation (no QEMU emulation needed) — fast builds for both `amd64` and `arm64`.
+Two-stage build (`golang:1.27-alpine` builder → `alpine:3.24` runtime). Final image bundles the Docker CLI + Compose plugin so multi-service apps work out of the box. Multi-arch via Go cross-compilation (no QEMU emulation needed) — fast builds for both `amd64` and `arm64`.
 
 ---
 
@@ -373,10 +374,13 @@ Two-stage build (`golang:1.26-alpine` builder → `alpine:3.23` runtime). Final 
 | `APP_ENV` | `development` | Set to `production` for JSON logging. |
 | `SERVER_PORT` | `3000` | HTTP listen port (also overridable via `-port` flag). |
 | `JWT_EXPIRY_HOURS` | `24` | Session lifetime in hours. UI silently refreshes every 30 minutes. |
-| `DOCKER_CLEANUP_THRESHOLD` | `80` | Disk usage % that lights up the cleanup warning badge. |
 | `COOLIFY_DATA_DIR` | `/data/coolifygo` | Data directory — must match the volume mount path. |
 | `TELEGRAM_BOT_TOKEN` | — | Telegram bot token (optional — can also be set in **Settings → Notifications**). |
 | `TELEGRAM_CHAT_ID` | — | Telegram chat ID (optional — can also be set in **Settings → Notifications**). |
+| `PUBLIC_IP` | auto | Public IP shown in app URLs. Set it when your cloud hides the public IP behind NAT (Oracle / AWS / GCP) and auto-detect picks the wrong one. |
+| `APP_URL` | `http://<server-ip>:<port>` | Public base URL used for GitHub App / OAuth callbacks. |
+| `ALLOWED_ORIGINS` | — | Comma-separated extra origins trusted for browser requests (CORS). |
+| `COOLIFY_TRUST_PROXY` | — | `true` = read the client IP from `X-Forwarded-For` (only behind your own reverse proxy). |
 
 > 🪄 On first run (no `DATABASE_URL` set), CoolifyGo self-bootstraps: generates secrets, starts managed Postgres + Redis containers via Docker, and writes `/data/coolifygo/.env` automatically.
 
@@ -411,8 +415,9 @@ Deploy any of these from **Services → + New Service**:
 | 📋 **MicroBin** | Pastebin & sharing | Feature-rich paste + file sharing — syntax highlighting, QR codes, encryption, burn-after-reading |
 | 🍥 **Opengist** | Git-backed pastebin | Self-hosted GitHub Gist alternative — every snippet is a real Git repo (clone/pull/push over HTTP + SSH) with revision history |
 | 🕷️ **Trawl** | Scraper / bypass | Web scraper that beats Cloudflare + CAPTCHAs — drop-in FlareSolverr replacement for Prowlarr / Jackett / Sonarr / Radarr (bundled Redis cookie cache) |
+| 🧦 **3X-UI** | Proxy panel | Xray web panel — VMess / VLESS / Trojan / Shadowsocks users, traffic limits and expiry from the browser |
 
-Each detail page surfaces admin URLs + first-login credentials in a quick-access panel.
+Each detail page surfaces admin URLs + first-login credentials in a quick-access panel. Host ports are picked automatically on save, so you can run several copies of the same service side by side without port clashes.
 
 **🔄 Update with instant + 10-min Rollback** — the **Update** button on every service pulls the latest images and recreates the stack. If pull or compose-up fails, the previous images are automatically restored (instant rollback, you never see the broken state). On success a **Rollback** button stays visible for 10 minutes so you can flip back to the previous images if the new version misbehaves. Data volumes are not rolled back — only image refs.
 
@@ -426,7 +431,7 @@ Every application has a webhook URL:
 POST /api/v1/webhook/{appID}
 ```
 
-Add it to your Git provider's push webhook settings. On every push CoolifyGo creates a new deployment and runs the full pipeline automatically.
+Add it to your Git provider's push webhook settings together with the app's **webhook secret** (shown in the app's Webhooks tab). On every push to the app's branch CoolifyGo creates a new deployment and runs the full pipeline automatically. Without the secret, nothing deploys.
 
 Toggle auto-deploy per app using the button on the application card — when disabled, incoming webhooks are silently ignored.
 
@@ -434,26 +439,27 @@ Toggle auto-deploy per app using the button on the application card — when dis
 - Settings → Webhooks → Add webhook
 - Payload URL: `http://<server-ip>:3000/api/v1/webhook/<appID>`
 - Content type: `application/json`
+- Secret: the app's webhook secret
 - Events: `Just the push event`
 
-> 🏢 For multi-repo fleets, prefer the **GitHub App** flow — one app, automatic per-installation tokens, no per-repo webhook setup. Create it from **Settings → Git Sources → New → GitHub App**.
+> 🏢 For multi-repo fleets, prefer the **GitHub App** flow — one app, automatic per-installation tokens, no per-repo webhook setup. Create it from **Settings → Git Sources → New → GitHub App**. GitLab and Gitea OAuth sources get one webhook URL each too: `/api/v1/webhook/gitlab/<sourceID>` or `/api/v1/webhook/gitea/<sourceID>` plus the secret shown on the source card.
 
 ---
 
 ## 💾 Backups & Restore
 
-Every managed database (Postgres / MySQL / MongoDB / Redis) ships scheduled backups out of the box.
+Every managed database (Postgres / MySQL / MariaDB / MongoDB / Redis / KeyDB) ships scheduled backups out of the box.
 
 **📅 Schedule:** preset dropdown (Off / Hourly / Every 6 h / Every 12 h / Daily 1 AM / Daily 4 AM / Daily midnight / Weekly Sunday / Monthly / Custom) or write a custom cron string. Evaluated in the global timezone (Settings → Updates).
 
-**🎯 Destination:** Telegram bot/chat (per-DB override or global) **OR** local disk at `/data/coolifygo/backups/<slug>/` when no Telegram is configured. 50 MB Telegram pre-flight + rate-limit retry handled automatically.
+**🎯 Destination:** Telegram bot/chat (per-DB override or global) **OR** local disk at `/data/coolifygo/backups/<slug>/` when no Telegram is configured. 50 MB Telegram pre-flight + rate-limit retry handled automatically. Local-disk backups have no size limit. Keeps the last 3 attempts in history and the last 2 files on disk per DB.
 
 **♻️ Restore:**
 - Upload a dump file from your machine, OR pick from saved local backups in a dropdown.
-- **Postgres:** handles both binary dumps and plain-text `.sql` / `.sql.gz`. Flag checkboxes: Clean / Create / Data-only / Schema-only.
-- **MySQL:** gzipped SQL.
+- **Postgres:** handles both binary dumps and plain-text `.sql` / `.sql.gz`. Flag checkboxes: Clean / Data-only / Schema-only.
+- **MySQL / MariaDB:** gzipped SQL.
 - **MongoDB:** gzipped archive.
-- **Redis:** swaps the RDB and auto-restarts (~2 s downtime).
+- **Redis / KeyDB:** swaps the RDB and auto-restarts (~2 s downtime).
 - Live log stream during the entire operation.
 
 **🏠 Self-Backup:** CoolifyGo can back up its own state (users, apps, settings, encrypted credentials) on its own cron. Configure under **Settings → Updates → Self-backup**. Choose between sharing the global Notifications Telegram or setting a dedicated bot/chat for system backups only. Restore from upload or saved local file — perfect for **migrating CoolifyGo between hosts**.
@@ -476,14 +482,18 @@ Create tokens at **Settings → API Tokens**. WebSocket endpoints also accept `?
 ```
 GET    /api/v1/auth/setup                  ← {"setup_needed": bool}
 POST   /api/v1/auth/register               ← only succeeds when no users exist yet
-POST   /api/v1/auth/login
-POST   /api/v1/auth/forgot-password        ← writes new password to /data/coolifygo/coolifygo-password.txt
+POST   /api/v1/auth/login                  ← 5 failures per IP → 15-min lockout
+POST   /api/v1/auth/forgot-password        ← tells you where the credentials file is (no reset)
+POST   /api/v1/auth/logout
+POST   /api/v1/auth/refresh                ← extend the session (browser session only)
 GET    /api/v1/auth/me
 PATCH  /api/v1/auth/me                     ← update email
 POST   /api/v1/auth/me/password            ← change password (requires current_password)
 GET    /api/v1/auth/tokens
-POST   /api/v1/auth/tokens
+POST   /api/v1/auth/tokens                 ← browser session only — a token can't mint tokens
 DELETE /api/v1/auth/tokens/{id}
+
+GET    /api/v1/statuses                    ← every app/DB/service status in one call; ?kind=apps|databases|services
 ```
 
 </details>
@@ -574,14 +584,24 @@ POST   /api/v1/git-sources
 DELETE /api/v1/git-sources/{id}
 GET    /api/v1/git-sources/github-app/manifest      ← generate GitHub App creation URL + manifest
 GET    /api/v1/git-sources/github-app/callback      ← public — GitHub redirects here after App creation
+GET    /api/v1/git-sources/{id}/installations       ← GitHub App installations
+GET    /api/v1/git-sources/{id}/repositories        ← repo picker (GitHub App / GitLab / Gitea)
+GET    /api/v1/git-sources/{id}/branches            ← branch picker
+GET    /api/v1/git-sources/{id}/oauth/authorize     ← start GitLab / Gitea OAuth
+GET    /api/v1/git-sources/oauth/{type}/callback    ← public — provider redirects here
 
 GET    /api/v1/services
 POST   /api/v1/services
 GET    /api/v1/services/{id}
+PATCH  /api/v1/services/{id}
 DELETE /api/v1/services/{id}
+GET    /api/v1/services/{id}/status
+GET    /api/v1/services/{id}/stats
 POST   /api/v1/services/{id}/start
 POST   /api/v1/services/{id}/stop
 POST   /api/v1/services/{id}/restart
+POST   /api/v1/services/{id}/update                 ← pull latest images + recreate
+POST   /api/v1/services/{id}/rollback               ← back to previous images (10-min window)
 GET    /api/v1/services/{id}/logs                   ← WebSocket
 GET    /api/v1/services/templates
 
@@ -615,12 +635,15 @@ POST   /api/v1/internal/reset-queue                 ← reset background job que
 GET    /api/v1/internal/version                     ← current version
 GET    /api/v1/internal/update/check                ← GHCR tag check (cached); ?force=true to bypass
 POST   /api/v1/internal/update/run                  ← swap to latest image via helper container
-POST   /api/v1/internal/restart                     ← recreate the CoolifyGo container in place
+POST   /api/v1/internal/restart                     ← restart the CoolifyGo container in place
+POST   /api/v1/internal/reboot                      ← full teardown + recreate, same image
 GET    /api/v1/internal/audit-log                   ← last 25h of state-changing requests
 GET    /api/v1/internal/runtime-stats               ← goroutines, mem, queue depths, DB sizes
 GET    /api/v1/internal/suggest-port                ← next-free port helper for create wizards
 POST   /api/v1/webhook/{appID}                      ← Git push auto-deploy
 POST   /api/v1/webhook/github                       ← centralised GitHub App webhook
+POST   /api/v1/webhook/gitlab/{sourceID}            ← GitLab OAuth source webhook
+POST   /api/v1/webhook/gitea/{sourceID}             ← Gitea OAuth source webhook
 GET    /health                                      ← {"status":"ok","service":"coolifygo"} or 503
 ```
 
@@ -632,11 +655,11 @@ GET    /health                                      ← {"status":"ok","service"
 
 | Layer | Choice |
 |---|---|
-| Language | 🐹 Go 1.26 |
+| Language | 🐹 Go 1.27 |
 | Router | chi v5 |
 | Database | 🐘 PostgreSQL v17 + pgx/v5 |
 | Schema | Single embedded schema, applied idempotently on every boot — no migrations layer to manage |
-| Docker | 🐳 Docker SDK v28 — pure Go, no shell-out (except Compose plugin) |
+| Docker | 🐳 Docker SDK v29 (`moby/moby` client) — pure Go, no shell-out (except Compose plugin) |
 | SSH | golang.org/x/crypto/ssh |
 | Git | go-git/go-git/v5 — recursive submodules, native HTTPS + SSH transports |
 | WebSockets | gorilla/websocket |
@@ -683,5 +706,6 @@ network-wide ad blocker, encrypted DNS, DNS over HTTPS, DoH, DNSCrypt, dnscrypt-
 hide DNS from ISP, self-hosted dns.adguard.com, self-hosted pastebin, MicroBin, Opengist,
 GitHub Gist alternative, self-hosted gist, Git-backed pastebin, file sharing,
 FlareSolverr replacement, Cloudflare bypass, CAPTCHA solver, self-hosted scraper, Trawl,
-Prowlarr FlareSolverr, Jackett Cloudflare, Sonarr Radarr proxy.
+Prowlarr FlareSolverr, Jackett Cloudflare, Sonarr Radarr proxy, 3X-UI, 3x-ui, Xray panel,
+VLESS, VMess, Trojan, Shadowsocks, MariaDB backup, KeyDB.
 -->
