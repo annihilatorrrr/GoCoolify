@@ -107,10 +107,10 @@ echo ""
 if [ $FORCE -eq 0 ]; then
     if [ "$MODE" = "full" ]; then
         echo -e "${YELLOW}${BOLD}WARNING: This is irreversible. All managed containers and data will be gone.${NC}"
-        read -p "Type 'yes' to confirm full removal: " confirm
+        read -r -p "Type 'yes' to confirm full removal: " confirm </dev/tty || confirm=""
         [ "$confirm" != "yes" ] && { info "Aborted."; exit 0; }
     else
-        read -p "Proceed with soft removal? [Y/n] " yn
+        read -r -p "Proceed with soft removal? [Y/n] " yn </dev/tty || yn=""
         yn="${yn:-Y}"
         case $yn in
         [Nn]*) info "Aborted."; exit 0 ;;
@@ -170,7 +170,7 @@ if [ "$MODE" = "soft" ]; then
     echo -e "  Config preserved   : ${COOLIFY_DIR}/.env"
     echo ""
     echo -e "  To reinstall:"
-    echo -e "    curl -fsSL ${REPO_RAW}/pscripts/install.sh | sudo bash"
+    echo -e "    curl -fsSL ${REPO_RAW}/install.sh | sudo bash"
     echo ""
     exit 0
 fi
@@ -264,21 +264,6 @@ if command -v docker &>/dev/null; then
     docker image prune   -af &>/dev/null && success "Unused images pruned"
     docker builder prune -af &>/dev/null && success "Build cache pruned"
 fi
-
-# ─── Wipe stale build/deploy/backup tempdirs ─────────────────────────────────
-# coolifygo creates these in $TMPDIR during deploys, compose builds, and DB
-# backups. They're normally swept by the in-process `wipeStale(30m)` cleanup,
-# but that only runs while the daemon is alive — a process that crashed mid-job
-# leaks them forever otherwise.
-TMP="${TMPDIR:-/tmp}"
-TMP_REMOVED=0
-shopt -s nullglob
-for d in "$TMP"/coolifygo-deploy-* "$TMP"/coolifygo-compose-* "$TMP"/coolifygo-backup-*; do
-    [ -e "$d" ] || continue
-    rm -rf -- "$d" && TMP_REMOVED=$((TMP_REMOVED + 1))
-done
-shopt -u nullglob
-[ "$TMP_REMOVED" -gt 0 ] && success "$TMP_REMOVED stale tempdir(s) removed from ${TMP}"
 
 # ─── Delete data directory ────────────────────────────────────────────────────
 if [ -d "$COOLIFY_DIR" ]; then
