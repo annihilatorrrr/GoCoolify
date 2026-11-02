@@ -14,7 +14,6 @@ ARCH=$(uname -m)
 case "$ARCH" in
     x86_64|amd64)   DOCKER_PLATFORM="linux/amd64" ;;
     aarch64|arm64)  DOCKER_PLATFORM="linux/arm64" ;;
-    armv7l)         DOCKER_PLATFORM="linux/arm/v7" ;;
     *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;;
 esac
 WHO=$(whoami)
@@ -180,7 +179,7 @@ if [ $REINSTALL -eq 1 ]; then
         echo -e "  ${GREEN}${BOLD}Preserved:${NC}        all app containers, databases, volumes, config"
         echo -e "  ${BOLD}Note:${NC}             to update only the image, use update.sh instead"
         echo ""
-        read -p "Proceed with reinstall? [Y/n] " yn
+        read -r -p "Proceed with reinstall? [Y/n] " yn </dev/tty || yn=""
         yn="${yn:-Y}"
         case $yn in
         [Nn]*) info "Aborted. To update: curl -fsSL ${REPO_RAW}/update.sh | sudo bash"; exit 0 ;;
@@ -211,7 +210,7 @@ if ! command -v docker &>/dev/null; then
         success "Docker installed."
     else
         while true; do
-            read -p "Docker not found. Install it automatically? [Y/n] " yn
+            read -r -p "Docker not found. Install it automatically? [Y/n] " yn </dev/tty || yn=""
             yn="${yn:-Y}"
             case $yn in
             [Yy]*) info "Installing Docker..."; sh -c "$(curl --silent -fsSL https://get.docker.com)"; systemctl enable --now docker; success "Docker installed."; break ;;
@@ -322,7 +321,7 @@ if is_oracle_cloud; then
         if [ $FORCE -eq 1 ]; then
             FIX_IPTABLES=1
         else
-            read -p "Open iptables for dashboard (${COOLIFY_PORT}) + TCP ${APP_PORT_RANGE/:/-}? [Y/n] " yn
+            read -r -p "Open iptables for dashboard (${COOLIFY_PORT}) + TCP ${APP_PORT_RANGE/:/-}? [Y/n] " yn </dev/tty || yn=""
             yn="${yn:-Y}"
             case $yn in
             [Yy]*) FIX_IPTABLES=1 ;;
@@ -403,7 +402,7 @@ if [ -f "$DAEMON_JSON" ]; then
         info "Keeping existing Docker daemon configuration."
     else
         while true; do
-            read -p "Docker daemon.json already exists. Overwrite? [Y/n] " yn
+            read -r -p "Docker daemon.json already exists. Overwrite? [Y/n] " yn </dev/tty || yn=""
             yn="${yn:-Y}"
             case $yn in
             [Yy]*) configureDocker; break ;;
