@@ -15,7 +15,7 @@
 #
 # Rollback if something goes wrong:
 #   docker stop coolifygo && docker rm coolifygo
-#   docker run -d --name coolifygo --restart no \
+#   docker run -d --name coolifygo --restart no --init \
 #     --network host \
 #     -v /var/run:/var/run \
 #     -v /data/coolifygo:/data/coolifygo \
@@ -100,13 +100,24 @@ for arg in "$@"; do
 done
 
 SERVICE="/etc/systemd/system/coolifygo.service"
-[ ! -f "$SERVICE" ] && die "CoolifyGo is not installed. Run: curl -fsSL ${REPO_RAW}/pscripts/install.sh | sudo bash"
+[ ! -f "$SERVICE" ] && die "CoolifyGo is not installed. Run: curl -fsSL ${REPO_RAW}/install.sh | sudo bash"
 [ ! -d "$COOLIFY_DIR" ] && die "Data directory $COOLIFY_DIR not found."
 
 # Read port from running container env if available, fall back to default.
 RUNNING_PORT=$(docker inspect coolifygo --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null \
     | grep '^SERVER_PORT=' | cut -d= -f2 || echo "")
 PORT="${RUNNING_PORT:-$COOLIFY_PORT}"
+
+# Carry over every config env var the running container was started with, so
+# an update never silently drops PUBLIC_IP, Telegram creds, CORS origins, …
+# (SERVER_PORT and COOLIFY_DATA_DIR are passed explicitly below).
+EXTRA_ENV=()
+while IFS= read -r kv; do
+    case "${kv%%=*}" in
+        APP_ENV|APP_URL|ALLOWED_ORIGINS|PUBLIC_IP|TELEGRAM_BOT_TOKEN|TELEGRAM_CHAT_ID|JWT_EXPIRY_HOURS|COOLIFY_TRUST_PROXY|DATABASE_URL|REDIS_URL|JWT_SECRET|DATA_ENCRYPTION_KEY)
+            EXTRA_ENV+=(-e "$kv") ;;
+    esac
+done < <(docker inspect coolifygo --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null || true)
 
 echo ""
 echo -e "${BOLD}CoolifyGo — Update${NC}"
@@ -159,7 +170,7 @@ docker rm coolifygo 2>/dev/null || true
 success "Old container removed"
 
 info "Starting new container…"
-docker run -d --name coolifygo --restart no --network host -v /var/run:/var/run -v "${COOLIFY_DIR}:/data/coolifygo" -e COOLIFY_DATA_DIR=/data/coolifygo -e SERVER_PORT="${PORT}" "${IMAGE}" || die "Failed to start new container. Rollback: docker run ... ${IMAGE_BAK}"
+docker run -d --name coolifygo --restart no --init --network host -v /var/run:/var/run -v "${COOLIFY_DIR}:/data/coolifygo" -e COOLIFY_DATA_DIR=/data/coolifygo -e SERVER_PORT="${PORT}" ${EXTRA_ENV[@]+"${EXTRA_ENV[@]}"} "${IMAGE}" || die "Failed to start new container. Rollback: docker run ... ${IMAGE_BAK}"
 success "Container started"
 
 # ─── Step 4: Health check ─────────────────────────────────────────────────────
@@ -174,8 +185,12 @@ for i in $(seq 1 30); do
 done
 
 if [ $READY -eq 0 ]; then
-    warn "Health check timed out — check logs: docker logs coolifygo -f"
-    warn "Rollback: docker stop coolifygo && docker rm coolifygo && docker run -d --name coolifygo --restart no --network host -v /var/run:/var/run -v ${COOLIFY_DIR}:/data/coolifygo -e COOLIFY_DATA_DIR=/data/coolifygo -e SERVER_PORT=${PORT} ${IMAGE_BAK}"
+    die "Health check timed out — new container is unhealthy.
+Logs: docker logs coolifygo -f
+Rollback:
+  docker stop coolifygo && docker rm coolifygo
+  docker run -d --name coolifygo --restart no --init --network host -v /var/run:/var/run -v ${COOLIFY_DIR}:/data/coolifygo -e COOLIFY_DATA_DIR=/data/coolifygo -e SERVER_PORT=${PORT} ${IMAGE_BAK}
+  systemctl restart coolifygo"
 fi
 
 # ─── Step 5: API cleanup (optional) ───────────────────────────────────────────
@@ -202,7 +217,7 @@ fi
 echo ""
 echo -e "  Dashboard : http://${SERVER_IP}:${PORT}"
 echo -e "  Logs      : docker logs coolifygo -f"
-echo -e "  Rollback  : docker stop coolifygo && docker rm coolifygo && docker run -d --name coolifygo --restart no --network host -v /var/run:/var/run -v ${COOLIFY_DIR}:/data/coolifygo -e COOLIFY_DATA_DIR=/data/coolifygo -e SERVER_PORT=${PORT} ${IMAGE_BAK}"
+echo -e "  Rollback  : docker stop coolifygo && docker rm coolifygo && docker run -d --name coolifygo --restart no --init --network host -v /var/run:/var/run -v ${COOLIFY_DIR}:/data/coolifygo -e COOLIFY_DATA_DIR=/data/coolifygo -e SERVER_PORT=${PORT} ${IMAGE_BAK} && systemctl restart coolifygo"
 echo ""
 echo -e "${YELLOW}${BOLD}REMINDER:${NC} Never run 'docker image prune -a' directly on this server."
 echo -e "          Use Settings → Docker Cleanup in the dashboard instead."
